@@ -464,7 +464,7 @@ export default function Ops(props) {
 
                     :
                         <List>
-                    {props.userObj.currentGroups.map(function (group) {
+                    {currentUser.groups.map(function (group) {
                         return (
                             <ListItemText key={group}>
                                 <Card variant="outlined" >
