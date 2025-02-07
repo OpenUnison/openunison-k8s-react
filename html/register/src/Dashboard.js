@@ -170,7 +170,7 @@ function DashboardContent() {
   const [showDialog, setShowDialog] = React.useState(true);
   const [showDialogButton, setShowDialogButton] = React.useState(false);
 
-  const [showSubmitDialog, setShowSubmitDialog] = React.useState(false);
+  
   const [submitRequestErrors, setSubmitRequestErrors] = React.useState([]);
   const [submitRequestSuccess, setSubmitRequestSuccess] = React.useState(false);
 
@@ -472,7 +472,12 @@ function DashboardContent() {
       setUserData: setUserData,
       setConfig: setConfig,
       setSubmitRequestErrors: setSubmitRequestErrors,
-      setShowSubmitDialog: setShowSubmitDialog
+      setShowDialog: setShowDialog,
+      setDialogText: setDialogText,
+      setDialogTitle: setDialogTitle,
+      setShowDialogButton: setShowDialogButton,
+      setDialogButtonLabel: setDialogButtonLabel,
+      setDialogButtonFunction: setDialogButtonFunction
     };
 
 
