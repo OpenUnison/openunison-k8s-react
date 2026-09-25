@@ -151,6 +151,7 @@ export default function Report(props) {
                 })
             }
             
+            {props.chooseScreenHandler ? <Button onClick={event => {props.chooseScreenHandler('reports')}} >Close Report</Button> : ""}
             </Stack>
 
 

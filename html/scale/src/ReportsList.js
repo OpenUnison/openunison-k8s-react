@@ -1,4 +1,7 @@
 import * as React from 'react';
+
+
+
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 import Orgs from './Orgs';
@@ -29,40 +32,72 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import configData from './config/config.json'
+import dayjs, { Dayjs } from 'dayjs';
 
 export default function ReportsList(props) {
     const [showSubmitDialog,setShowSubmitDialog] = React.useState(false);
-    const [showParamsDialog,setShowParamsDialog] = React.useState(false);
+    const [showParamsDialog,setShowParamsDialog] = React.useState(props.reportState && props.reportState.showParamsDialog ? props.reportState.showParamsDialog : false);
     const [selectedReport,setSelectedReport] = React.useState({"parameters":[]});
     
+    const [origUserName,setOrigUserName] = React.useState(props.userName);
+    const [reportUserName,setReportUserName] = React.useState(props.reportState && props.reportState.userName ? props.reportState.userName : props.userName);
+    const [beginDate,setBeginDate] = React.useState(props.reportState && props.reportState.beginDate ? props.reportState.beginDate :  0);
+    const [endDate,setEndDate] = React.useState(props.reportState && props.reportState.endDate ? props.reportState.endDate : 0);
 
-    const [reportUserName,setReportUserName] = React.useState("");
-    const [beginDate,setBeginDate] = React.useState(0);
-    const [endDate,setEndDate] = React.useState(0);
-    const [enablesubmitReport,setEnableSubmitReport] = React.useState(false);
 
+    useEffect(() => {
+        if (document.visibilityState === "visible") {
+            if (props.reportState && props.reportState.report) {
+                if (props.reportState.beginDate) {
+                    setBeginDate(props.reportState.beginDate);
+                }
 
-    function checkIfCanSubmitReport() {
+                if (props.reportState.endDate) {
+                    setEndDate(props.reportState.endDate);
+                }
+
+                if (props.reportState.reportUserName) {
+                    setReportUserName(props.reportState.reportUserName);
+                }
+
+                setSelectedReport({...props.reportState.report});
+                setShowParamsDialog(true);
+
+                
+            }
+        }
         
-        var allCnditionsSet = true;
-        if (selectedReport.parameters.indexOf("userKey") >= 0) {
-            allCnditionsSet = allCnditionsSet && reportUserName.length > 0;
-        }
+        
 
-        if (selectedReport.parameters.indexOf("beginDate") >= 0) {
-            allCnditionsSet = allCnditionsSet && beginDate > 0;
-        }
 
-        if (selectedReport.parameters.indexOf("endDate") >= 0) {
-            allCnditionsSet = allCnditionsSet && endDate > 0;
-        }
+    }, []);
 
-        setEnableSubmitReport(allCnditionsSet);
-
-    }
 
     function loadReport(report) {
         setShowSubmitDialog(true);
+
+        // if main report, store the state
+
+        if (props.reportState) {
+            const newState = {};
+            newState.report = {...report};
+            if (beginDate > 0) {
+                newState.beginDate = beginDate;
+            }
+
+            if (endDate > 0) {
+                newState.endDate = endDate;
+            }
+
+            if (reportUserName) {
+                newState.reportUserName = reportUserName;
+            }
+
+            if (props.setReportState) {
+                props.setReportState(newState);
+            }
+        }
+
         var url = configData.SERVER_URL + "main/reports/" + report.name;
         var params = '';
 
@@ -117,6 +152,54 @@ export default function ReportsList(props) {
         })
     }
 
+    function canSubmitReport() {
+        var allCnditionsSet = true;
+
+        if (selectedReport.parameters.indexOf("userKey") >= 0) {
+            allCnditionsSet = allCnditionsSet && reportUserName.length > 0;
+        }
+
+        if (selectedReport.parameters.indexOf("beginDate") >= 0) {
+            allCnditionsSet = allCnditionsSet && beginDate > 0;
+        }
+
+        if (selectedReport.parameters.indexOf("endDate") >= 0) {
+            allCnditionsSet = allCnditionsSet && endDate > 0;
+        }
+
+        return allCnditionsSet;
+    }
+
+    function generateReportCard(report) {
+        return (<Grid item xs={12} key={report.name} sx={{ mt: 4, mb: 4 }}>
+                            <Card variant="outlined" style={{ display: 'flex', justifyContent: 'space-between', flexDirection: 'column', height: "100%" }}>
+                                <CardHeader title={report.name}></CardHeader>
+                                <CardContent >
+
+                                    <Typography variant="body1">{report.description}</Typography>
+
+
+                                </CardContent>
+                                <CardActions>
+                                    <Button variant="contained" onClick={(event) => {
+
+                                        if (report.parameters.length == 0) {
+                                            loadReport(report);
+                                        } else {
+                                            
+                                            setSelectedReport({...report});
+                                            setShowParamsDialog(true);
+                                        }
+
+
+                                    }} >Run</Button>
+
+
+                                </CardActions>
+                            </Card>
+                        </Grid>);
+    }
+
     return (
         <React.Fragment>
            
@@ -146,50 +229,28 @@ export default function ReportsList(props) {
                     
                     <Stack spacing={2}>
                         
-                        {selectedReport.parameters.indexOf("userKey") >= 0 ? <TextField label="User Name" fullWidth margin="normal" onChange={(event) => {
+                        {selectedReport.parameters.indexOf("userKey") >= 0 ? <TextField label="User Name" fullWidth margin="normal" value={reportUserName}  onChange={(event) => {
                             setReportUserName(event.target.value);
                             
-                            var allCnditionsSet = true;
-
-                            allCnditionsSet = allCnditionsSet && event.target.value.length > 0;
-
-                            if (selectedReport.parameters.indexOf("beginDate") >= 0) {
-                                allCnditionsSet = allCnditionsSet && beginDate > 0;
-                            }
-                    
-                            if (selectedReport.parameters.indexOf("endDate") >= 0) {
-                                allCnditionsSet = allCnditionsSet && endDate > 0;
-                            }
-                    
-                            setEnableSubmitReport(allCnditionsSet);
+                            
 
 
                             }}/> : ""}
                         {selectedReport.parameters.indexOf("beginDate") >= 0  ?
                         
                             <LocalizationProvider dateAdapter={AdapterDayjs}>
-                            <DatePicker  label="Begin Date" labelId="begindate-label" onChange={(newValue) => {
+                            <DatePicker value={beginDate > 0 ? dayjs(beginDate) : null} label="Begin Date" labelId="begindate-label" onChange={(newValue) => {
                                 
                                 
                                 if (newValue == null) {
                                     setBeginDate(0);
-                                    setEnableSubmitReport(false);
+                                    
                                     return;
                                 }
                                 
                                 setBeginDate(newValue.unix() * 1000);
                                 
-                                var allCnditionsSet = true;
                                 
-                                if (selectedReport.parameters.indexOf("userKey") >= 0) {
-                                    allCnditionsSet = allCnditionsSet && reportUserName.length > 0;
-                                }
-
-                                if (selectedReport.parameters.indexOf("endDate") >= 0) {
-                                    allCnditionsSet = allCnditionsSet && endDate > 0;
-                                }
-                        
-                                setEnableSubmitReport(allCnditionsSet);
                             }} />
                             </LocalizationProvider>
                         
@@ -197,26 +258,16 @@ export default function ReportsList(props) {
                         {selectedReport.parameters.indexOf("endDate") >= 0  ?
                         
                         <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <DatePicker  label="End Date" labelId="begindate-label" onChange={(newValue) => {
+                        <DatePicker value={endDate > 0 ? dayjs(endDate) : null}  label="End Date" labelId="begindate-label" onChange={(newValue) => {
                             if (newValue == null) {
                                 setEndDate(0);
-                                setEnableSubmitReport(false);
+                                
                                 return;
                             }
 
                             setEndDate(newValue.unix() * 1000);
                             
-                            var allCnditionsSet = true;
                             
-                            if (selectedReport.parameters.indexOf("userKey") >= 0) {
-                                allCnditionsSet = allCnditionsSet && reportUserName.length > 0;
-                            }
-
-                            if (selectedReport.parameters.indexOf("beginDate") >= 0) {
-                                allCnditionsSet = allCnditionsSet && beginDate > 0;
-                            }
-                    
-                            setEnableSubmitReport(allCnditionsSet);
                         }} />
                         </LocalizationProvider>
                     
@@ -224,18 +275,26 @@ export default function ReportsList(props) {
                     </Stack>
                 </DialogContent>
                 <DialogActions>
-                    <Button disabled={!enablesubmitReport} onClick={(event) => {
-                        setReportUserName("");
-                        setBeginDate(0);
-                        setEndDate(0);
-                        setShowParamsDialog(false);
+                    <Button disabled={!canSubmitReport()} onClick={(event) => {
+                        //setReportUserName(origUserName);
+                        //setBeginDate(0);
+                        //setEndDate(0);
+                        //setShowParamsDialog(false);
                         loadReport(selectedReport);
                         
                     }}>Request Report</Button>
                     <Button onClick={(event) => {
-                        setReportUserName("");
+                        setReportUserName(origUserName);
                         setBeginDate(0);
                         setEndDate(0);
+                        if (props.setReportState) {
+                            if (props.reportState) {
+                                props.setReportState({});
+                            } else {
+                                props.setReportState(null);
+                            }
+                        }
+                        
                         setShowParamsDialog(false);
                     }} autoFocus>
                         Cancel Request
@@ -258,35 +317,15 @@ export default function ReportsList(props) {
                 >
                     {props.reports.reports.map(function (report) {
 
-
-
-                        return (<Grid item xs={12} key={report.name} sx={{ mt: 4, mb: 4 }}>
-                            <Card variant="outlined" style={{ display: 'flex', justifyContent: 'space-between', flexDirection: 'column', height: "100%" }}>
-                                <CardHeader title={report.name}></CardHeader>
-                                <CardContent >
-
-                                    <Typography variant="body1">{report.description}</Typography>
-
-
-                                </CardContent>
-                                <CardActions>
-                                    <Button variant="contained" onClick={(event) => {
-
-                                        if (report.parameters.length == 0) {
-                                            loadReport(report);
-                                        } else {
-                                            setEnableSubmitReport(false);
-                                            setSelectedReport({...report});
-                                            setShowParamsDialog(true);
-                                        }
-
-
-                                    }} >Run</Button>
-
-
-                                </CardActions>
-                            </Card>
-                        </Grid>);
+                        if (props.requireUsernameParam) {
+                            if (report.parameters.indexOf("userKey") >= 0) {
+                                return generateReportCard(report);    
+                            }
+                        } else {
+                            return generateReportCard(report);
+                        }
+                        
+                        
 
 
 
