@@ -362,24 +362,29 @@ export default function Ops(props) {
                 <Button onClick={(event => {
                     setShowSubmitDialog(true);
 
-                    var newAttributes = {};
+                    var newAttributes = [];
                     Object.keys(currentUserAttribs).map(attrName => {
-                        alert(attrName);
                         if (currentUser.metaData[attrName] && !currentUser.metaData[attrName].readOnly) {
-                            newAttributes[attrName] = {
+                            newAttributes.push({
 
                                 "name": attrName,
-                                "value": currentUserAttribs[attrName]
-                            }
+                                "values": [currentUserAttribs[attrName]]
+                            });
                         }
                     });
+
+                    const updatePayload = {
+                        "dn": currentUser.dn,
+                        "attributes": newAttributes,
+                        "reason": "ops portal update"
+                    }
 
 
                     const requestOptions = {
                         mode: "cors",
-                        method: 'PUT',
+                        method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(newAttributes)
+                        body: JSON.stringify(updatePayload)
                     };
 
                     fetch(configData.SERVER_URL + "ops/user", requestOptions)
