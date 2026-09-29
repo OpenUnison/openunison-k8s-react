@@ -151,7 +151,7 @@ function DashboardContent() {
 
   const chooseScreenHandler = (screenName) => {
     setPageName(screenName);
-    document.title = 'OpenUnison Scale - ' + formatPageTitle(screenName);
+    document.title = config.headerTitle + ' - ' + formatPageTitle(screenName);
   }
 
   const [config, setConfig] = React.useState({"headerTitle": "OpenUnison"});
@@ -309,6 +309,7 @@ function DashboardContent() {
       })
       .then(dataConfig => {
         setConfig(dataConfig);
+        document.title = dataConfig.headerTitle;
         fetch(configData.SERVER_URL + "main/user")
           .then(response => {
             return response.json()
