@@ -38,7 +38,7 @@ export default function Links(props) {
 
                                 </CardContent>
                                 <CardActions style={{ justifyContent: 'center' }}>
-                                    <Link tabindex="-1" href={link.url} color="primary" underline="hover" variant='h5' target={link.name} >{link.label}</Link>
+                                    <Link tabIndex="-1" href={link.url} color="primary" underline="hover" variant='h5' target={link.name} >{link.label}</Link>
                                 </CardActions>
                             </Card>
                             </Link>

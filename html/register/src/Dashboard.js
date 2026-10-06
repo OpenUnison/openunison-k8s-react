@@ -258,7 +258,7 @@ function DashboardContent() {
       })
       .then(dataConfig => {
         
-        document.title = "OpenUnison Scale - " + dataConfig.frontPage.title;
+        document.title = dataConfig.headerTitle + " - " + dataConfig.frontPage.title;
 
         var localDataConfig = {...dataConfig};
 

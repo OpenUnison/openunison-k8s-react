@@ -43,6 +43,8 @@ import OrgInfo from './OrgInfo';
 import { useEffect, useState } from 'react';
 import OpsWorkflows from './OpsWorkflows';
 import Orgs from './Orgs';
+import ReportsList from './ReportsList';
+import Report from './Report.js';
 
 import Alert from '@mui/material/Alert';
 import { Checkbox, DialogActions } from '@mui/material';
@@ -80,6 +82,11 @@ export default function Ops(props) {
     const [semaphore, setSemaphore] = React.useState(new Semaphore(10));
     
     const [showLoadDialog,setShowLoadDialog] = React.useState(false);
+
+    const [showReportsDialog,setShowReportsDialog] = React.useState(false);
+    const [reports,setReports] = React.useState({"reports":[]})
+    const [report, setReport] = React.useState({});
+    const [showReport,setShowReport] = React.useState(false);
 
     var searchAttrs = {}
     props.opsConfig.searchableAttributes.map(attrCfg => {
@@ -221,6 +228,31 @@ export default function Ops(props) {
 
     }
 
+    function setReportsList(node) {
+        fetch(configData.SERVER_URL + "main/reports/org/" + node)
+            .then(response => {
+
+                if (response.status == 200) {
+                    return response.json();
+                } else {
+                    return Promise.resolve({"reports":[]});
+                }
+
+
+            })
+            .then(data => {
+                var reps = data.reports;
+                var newReports = { "reports": reps };
+                setReports(newReports);
+                
+            })
+    }
+
+    function handleReportOrgClick(event, node) {
+        setCurrentOrg(props.orgsById[node]);
+        setReportsList(node);
+    }
+
     function onWokrlfowChange(event) {
 
         filterWorkflows(event.target.value,selectedFilters);
@@ -268,6 +300,20 @@ export default function Ops(props) {
                 return user.attributes[i].values[0];
             }
         }
+    }
+
+    function uidAttribute(config,user) {
+        for (var i = 0; i < user.attributes.length; i++) {
+            if (user.attributes[i].name == config.uidAttributeName) {
+                return user.attributes[i].values[0];
+            }
+        }
+
+        return "NO USER!!!!";
+    }
+
+    function chooseScreenHandler(screenName) {
+        setShowReport(screenName == 'report');
     }
 
     function showUserAttributes() {
@@ -379,7 +425,52 @@ export default function Ops(props) {
 
     return (
         <React.Fragment>
-            
+            <Dialog open={showReport} fullWidth={true}>
+                <DialogTitle>Report</DialogTitle>
+                <DialogContent>
+                    <Report config={props.config} user={props.user} userObj={props.userObj} report={report} />
+                    
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={event => {chooseScreenHandler('none')}}>Close Report</Button>
+                </DialogActions>
+            </Dialog>
+            <Dialog
+                open={showReportsDialog}
+
+                aria-labelledby="alert-dialog-title"
+                aria-describedby="alert-dialog-description"
+            >
+                <DialogTitle id="alert-dialog-title">Run Reports for {displayName(props.config, currentUser)}</DialogTitle>
+                <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        Choose a report to run
+                    </DialogContentText>
+                    <Grid container spacing={0}>
+                        <Grid item xs={12} md={7} lg={8}>
+                            <Paper
+                                sx={{
+                                    p: 2,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    height: 240
+                                }}
+                            >
+                                <Orgs config={props.config} flag={'showInReports'} handleOrgClick={handleReportOrgClick} title="" orgs={props.orgs} orgsById={props.orgsById}/>
+                            </Paper>
+                        </Grid>
+                        <Grid item sm={12}>
+                            <ReportsList reportState={null} setReportState={null} reports={reports} setReport={setReport} chooseScreenHandler={chooseScreenHandler} userName={currentUser.uidVal} requireUsernameParam={true} />
+                        </Grid>
+                        
+                    </Grid>
+                    
+                </DialogContent>
+                <DialogActions>
+                  <Button  onClick={event => {  setShowReportsDialog(false) }}>Close</Button>
+                </DialogActions>
+
+            </Dialog>
             <Dialog
                 open={showSubmitDialog}
 
@@ -484,7 +575,9 @@ export default function Ops(props) {
                             </Grid>
 
                         </Grid>
-                        <Button onClick={event => { setShowUserDialog(false); setCurrentUser({ metaData: {}, attributes: {}, groups: [] }); setCurrentUserAttribs({}) }}>Close</Button>
+                        <Button onClick={event => { setShowReportsDialog(true) }}>Reports</Button>
+                        <Button onClick={event => { setShowUserDialog(false); setCurrentUser({ metaData: {}, attributes: {}, groups: [] }); setCurrentUserAttribs({}) ; setShowReportsDialog(false) }}>Close</Button>
+                        
                     </Stack>
                 </DialogContent>
             </Dialog>
@@ -599,7 +692,9 @@ export default function Ops(props) {
                                                     fetch(configData.SERVER_URL + "ops/user?dn=" + encodeURIComponent(row.dn))
                                                         .then(response => response.json())
                                                         .then(data => {
-                                                            setCurrentUser({ ...data });
+                                                            const currentUser = { ...data };
+                                                            currentUser.uidVal = row[props.config.uidAttributeName];
+                                                            setCurrentUser(currentUser);
                                                             var userAttrs = {};
                                                             data.attributes.map(attribute => {
                                                                 userAttrs[attribute.name] = attribute.values[0];

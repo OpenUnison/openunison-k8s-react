@@ -189,7 +189,7 @@ function DashboardContent() {
         return response.json()
       })
       .then(dataConfig => {
-        document.title = "OpenUnison Scale - " + dataConfig.frontPage.title;
+        document.title = dataConfig.headerTitle + " - " + dataConfig.frontPage.title;
         
         setConfig(dataConfig);
 
